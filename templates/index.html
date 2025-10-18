@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAT Guatemala - Automatización de Descargas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .info-box ul li {
+            padding: 5px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .info-box ul li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragover {
+            background: #e8ecff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        #workersSelect:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .options {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .option-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .option-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .option-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .option-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .result-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .result-item:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .result-item.success {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+        
+        .result-item.error {
+            border-color: #f44336;
+            background: #fff5f5;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .result-status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .result-status.success {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .result-status.error {
+            background: #f44336;
+            color: white;
+        }
+        
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .progress {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .summary-card h4 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .summary-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .download-section {
+            margin-top: 30px;
+            text-align: center;
+            display: none;
+        }
+                /* Desactivar grupo completo visualmente */
+        .disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Bloquear interacción dentro del grupo grisado */
+        .disabled * {
+            pointer-events: none !important;
+        }
+
+        /* Extra: forzar apariencia grisada del select deshabilitado */
+        #workersSelect:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #f5f5f5;
+            color: #777;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🇬🇹 SAT Guatemala</h1>
+            <p>Automatización de Descargas Masivas</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                <h3>📋 Formato del Archivo Excel</h3>
+                <p>El archivo debe contener las siguientes columnas:</p>
+                <ul>
+                    <li><strong>usuario</strong>: NIT o usuario</li>
+                    <li><strong>password</strong>: Contraseña</li>
+                    <li><strong>mes</strong>: Formato DD (ej: 12)</li>
+                    <li><strong>año</strong>: Formato AAAA (ej: 2025)</li>
+                </ul>
+                <button class="btn btn-secondary" onclick="descargarPlantilla()">
+                    📥 Descargar Plantilla de Ejemplo
+                </button>
+            </div>
+            
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <h3>Arrastra tu archivo Excel aquí</h3>
+                <p>o haz click para seleccionar</p>
+                <p id="fileName" style="margin-top: 15px; color: #667eea; font-weight: bold;"></p>
+                <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls">
+            </div>
+            
+            <div class="options">
+                <div class="option-group">
+                    <label for="modoSelect">Modo de Procesamiento:</label>
+                    <select id="modoSelect">
+                        <option value="secuencial">🔄 Secuencial (uno por uno)</option>
+                        <!--<option value="paralelo">⚡ Paralelo (múltiples simultáneos) - En desarrollo</option>-->
+                    </select>
+                </div>
+                
+                <div class="option-group" id="workersGroup" style="display: none;">
+                    <label for="workersSelect">Procesos Simultáneos:</label>
+                    <select id="workersSelect">
+                        <option value="2">2 procesos</option>
+                        <option value="3" selected>3 procesos</option>
+                        <option value="5">5 procesos</option>
+                        <option value="10">10 procesos</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="btn" id="processBtn" onclick="procesarArchivo()" disabled>
+                    🚀 Procesar Archivo
+                </button>
+            </div>
+            
+            <div class="progress" id="progress">
+                <div class="progress-text" id="progressText">Procesando...</div>
+                <div class="loader"></div>
+            </div>
+            
+            <div class="download-section" id="downloadSection">
+                <h3 style="color: #667eea; margin-bottom: 15px;">✅ Proceso Completado</h3>
+                <button class="btn" id="downloadBtn" onclick="descargarZip()">
+                    📦 Descargar Todos los Archivos (ZIP)
+                </button>
+            </div>
+            
+            <div class="results" id="results">
+                <h2 style="color: #667eea; margin-bottom: 20px;">📊 Resultados</h2>
+                <div class="summary" id="summary"></div>
+                <div id="resultsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let archivoSeleccionado = null;
+        let zipFilename = null;
+
+        // Configurar drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                archivoSeleccionado = files[0];
+                mostrarNombreArchivo(files[0].name);
+            }
+        });
+        
+        // Listener para cambio de archivo
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                archivoSeleccionado = e.target.files[0];
+                mostrarNombreArchivo(e.target.files[0].name);
+            }
+        });
+        
+        // Listener para cambio de modo
+        // document.getElementById('modoSelect').addEventListener('change', (e) => {
+        //     const workersGroup = document.getElementById('workersGroup');
+        //     if (e.target.value === 'paralelo') {
+        //         workersGroup.style.display = 'block';
+        //     } else {
+        //         workersGroup.style.display = 'none';
+        //     }
+        // });
+        
+        // grayed out
+        document.getElementById('modoSelect').addEventListener('change', (e) => {
+            const workersGroup = document.getElementById('workersGroup');
+            const workersSelect = document.getElementById('workersSelect');
+
+            if (e.target.value === 'paralelo') {
+                // Mostrar el grupo, pero dejarlo "grisado" e inactivo
+                workersGroup.style.display = 'block';
+                workersGroup.classList.add('disabled'); // aplicar opacidad y bloquear interacción
+                workersSelect.disabled = true; // deshabilitar select (opcional)
+                workersSelect.title = 'Modo paralelo en desarrollo — no seleccionable'; // tooltip
+            } else {
+                // Ocultar y reactivar el select
+                workersGroup.style.display = 'none';
+                workersGroup.classList.remove('disabled');
+                workersSelect.disabled = false;
+                workersSelect.title = '';
+            }
+        });
+
+
+        function mostrarNombreArchivo(nombre) {
+            document.getElementById('fileName').textContent = `✅ ${nombre}`;
+            document.getElementById('processBtn').disabled = false;
+        }
+        
+        function descargarPlantilla() {
+            window.location.href = '/plantilla';
+        }
+        
+        async function procesarArchivo() {
+            if (!archivoSeleccionado) {
+                alert('Por favor selecciona un archivo primero');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('archivo', archivoSeleccionado);
+            formData.append('modo', document.getElementById('modoSelect').value);
+            formData.append('max_workers', document.getElementById('workersSelect').value);
+            
+            // Mostrar loader
+            document.getElementById('progress').style.display = 'block';
+            document.querySelector('.loader').style.display = 'block';
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('downloadSection').style.display = 'none';
+            
+            try {
+                const response = await fetch('/procesar', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                // Guardar nombre del zip
+                zipFilename = data.zip_file;
+                
+                // Mostrar resultados
+                mostrarResultados(data);
+                
+            } catch (error) {
+                alert('Error al procesar: ' + error.message);
+            } finally {
+                document.getElementById('progress').style.display = 'none';
+                document.querySelector('.loader').style.display = 'none';
+                document.getElementById('processBtn').disabled = false;
+            }
+        }
+        
+        function mostrarResultados(data) {
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.getElementById('summary');
+            const resultsListDiv = document.getElementById('resultsList');
+            
+            // Mostrar resumen
+            summaryDiv.innerHTML = `
+                <div class="summary-card">
+                    <h4>Total Procesados</h4>
+                    <div class="number">${data.total_procesados}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Exitosos</h4>
+                    <div class="number" style="color: #4caf50;">${data.exitosos}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Con Errores</h4>
+                    <div class="number" style="color: #f44336;">${data.errores}</div>
+                </div>
+            `;
+            
+            // Mostrar lista de resultados
+            resultsListDiv.innerHTML = data.resultados.map(resultado => `
+                <div class="result-item ${resultado.status}">
+                    <div class="result-header">
+                        <strong>👤 ${resultado.usuario}</strong>
+                        <span class="result-status ${resultado.status}">
+                            ${resultado.status === 'success' ? '✓ EXITOSO' : '✗ ERROR'}
+                        </span>
+                    </div>
+                    <p>${resultado.mensaje}</p>
+                    ${resultado.archivos && resultado.archivos.length > 0 ? `
+                        <p><strong>Archivos:</strong> ${resultado.archivos.join(', ')}</p>
+                    ` : ''}
+                </div>
+            `).join('');
+            
+            resultsDiv.style.display = 'block';
+            
+            // Mostrar botón de descarga si hay archivos
+            if (data.exitosos > 0) {
+                document.getElementById('downloadSection').style.display = 'block';
+            }
+        }
+        
+        function descargarZip() {
+            if (zipFilename) {
+                window.location.href = `/descargar/${zipFilename}`;
+            }
+        }
+    </script>
+</body>
+</html>
