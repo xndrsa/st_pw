@@ -26,11 +26,19 @@ class SATNavigator:
         print("🚀 Iniciando navegador...")
         
         self.playwright = await async_playwright().start()
+        # self.browser = await self.playwright.chromium.launch(
+        #     headless=headless,
+        #     args=['--disable-blink-features=AutomationControlled']
+        # )
         self.browser = await self.playwright.chromium.launch(
-            headless=headless,
-            args=['--disable-blink-features=AutomationControlled']
+        headless=headless,
+        args=[
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-blink-features=AutomationControlled"
+            ]
         )
-        
+
         self.context = await self.browser.new_context(
             viewport={'width': 1920, 'height': 1080},
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'

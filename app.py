@@ -511,7 +511,7 @@ async def procesar_empresa_async(datos):
         
         # Crear navegador
         nav = SATNavigator()
-        await nav.iniciar(headless=False)  # Modo headless para servidor
+        await nav.iniciar(headless=True)  # Modo headless para servidor
         
         # Login
         await nav.ir_a_login()
@@ -625,7 +625,7 @@ async def procesar_empresa_optimizado_async(datos):
         
         # Crear navegador
         nav = SATNavigator()
-        await nav.iniciar(headless=False)
+        await nav.iniciar(headless=True)
         
         # Login UNA SOLA VEZ
         await nav.ir_a_login()
