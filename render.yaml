@@ -1,13 +1,11 @@
 services:
   - type: web
-    name: sat-flask-app
+    name: sat-navigator-api
     env: python
-    region: oregon
-    plan: free
+    pythonVersion: 3.11.9
     buildCommand: |
       pip install -r requirements.txt
-      python -m playwright install chromium
-    startCommand: gunicorn -w 4 -b 0.0.0.0:10000 app:app
-    envVars:
-      - key: PORT
-        value: 10000
+      playwright install --with-deps chromium
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    plan: free
+
