@@ -1,0 +1,6 @@
+*.db
+*.venv
+__pycache__/
+/.venv
+/downloads
+/uploads
